@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusChat Demo — Embeddable AI Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            color: white;
+            padding: 80px 24px 60px;
+            text-align: center;
+        }
+
+        .demo-header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .demo-header p {
+            font-size: 18px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .demo-content {
+            max-width: 800px;
+            margin: -30px auto 80px;
+            padding: 0 24px;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .demo-card h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #4F46E5;
+        }
+
+        .demo-card h3 {
+            font-size: 18px;
+            margin: 24px 0 12px;
+            color: #334155;
+        }
+
+        .demo-card p {
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .demo-card pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .demo-card code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: #64748b;
+            margin: 4px 0 0;
+        }
+
+        .arrow {
+            text-align: center;
+            padding: 20px;
+            font-size: 32px;
+            color: #4F46E5;
+        }
+
+        .arrow span {
+            animation: bounce-arrow 2s infinite;
+            display: inline-block;
+        }
+
+        @keyframes bounce-arrow {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(8px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="demo-header">
+        <div class="demo-badge">🤖 Live Demo</div>
+        <h1>NexusChat</h1>
+        <p>Premium embeddable AI chatbot for customer support. Click the button in the bottom-right corner to try it!
+        </p>
+    </div>
+
+    <div class="demo-content">
+        <div class="demo-card">
+            <h2>🚀 Quick Start</h2>
+            <p>Embed NexusChat on any website with just two lines of code:</p>
+            <pre><code>&lt;!-- NexusChat Widget --&gt;
+&lt;script&gt;
+  window.NexusChatConfig = {
+    tenantId: 'default',
+    serverUrl: 'http://localhost:3000',
+    // Optional customization:
+    // name: 'My Support Bot',
+    // primaryColor: '#4F46E5',
+    // theme: 'dark',
+    // language: 'es',
+  };
+&lt;/script&gt;
+&lt;script src="http://localhost:3000/widget/nexuschat.min.js"&gt;&lt;/script&gt;</code></pre>
+        </div>
+
+        <div class="demo-card">
+            <h2>✨ Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h4>AI-Powered</h4>
+                    <p>Uses free-tier AI models with smart fallback</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📚</div>
+                    <h4>Knowledge Base</h4>
+                    <p>FAQs & documents for accurate answers</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <h4>Customizable</h4>
+                    <p>Colors, theme, branding, language</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📱</div>
+                    <h4>Responsive</h4>
+                    <p>Works beautifully on all devices</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h4>Secure</h4>
+                    <p>Shadow DOM, rate limiting, sanitization</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h4>Analytics</h4>
+                    <p>Track conversations and performance</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-card">
+            <h2>🎛️ Configuration Options</h2>
+            <pre><code>{
+  tenantId: 'default',          // Your tenant ID
+  serverUrl: 'http://...',      // Backend API URL
+  name: 'NexusChat',            // Bot name
+  primaryColor: '#4F46E5',      // Main color
+  secondaryColor: '#7C3AED',    // Gradient color
+  theme: 'light',               // 'light' or 'dark'
+  position: 'bottom-right',     // 'bottom-right' or 'bottom-left'
+  welcomeMessage: 'Hi! ...',    // Welcome text
+  language: 'en',               // 'en', 'es', 'pt'
+  quickReplies: ['Pricing'...], // Quick reply buttons
+  borderRadius: 16,             // Window border radius
+  showBranding: true,           // Show "Powered by NexusChat"
+  logoUrl: '',                  // Custom logo URL
+}</code></pre>
+        </div>
+
+        <div class="arrow"><span>↓</span></div>
+        <p style="text-align:center;color:#64748b;font-size:14px;">Try the chatbot by clicking the purple button below ↘
+        </p>
+    </div>
+
+    <!-- ===== NEXUSCHAT WIDGET EMBED ===== -->
+    <script>
+        window.NexusChatConfig = {
+            tenantId: 'default',
+            serverUrl: 'http://localhost:3000',
+        };
+    </script>
+    <script src="http://localhost:3000/widget/nexuschat.min.js"></script>
+</body>
+
+</html>

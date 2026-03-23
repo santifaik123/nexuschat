@@ -1,0 +1,68 @@
+import { useState, useEffect, useCallback } from 'react';
+import Dashboard from './pages/Dashboard.jsx';
+import Conversations from './pages/Conversations.jsx';
+import KnowledgeBase from './pages/KnowledgeBase.jsx';
+import Appearance from './pages/Appearance.jsx';
+import AISettings from './pages/AISettings.jsx';
+import Leads from './pages/Leads.jsx';
+import Settings from './pages/Settings.jsx';
+
+const NAV_ITEMS = [
+    { id: 'dashboard', label: 'Dashboard', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg> },
+    { id: 'conversations', label: 'Conversations', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
+    { id: 'knowledge', label: 'Knowledge Base', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg> },
+    { id: 'appearance', label: 'Appearance', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg> },
+    { id: 'ai', label: 'AI Settings', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" /><circle cx="12" cy="15" r="2" /></svg> },
+    { id: 'leads', label: 'Leads', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+    { id: 'settings', label: 'Settings', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg> },
+];
+
+const PAGES = {
+    dashboard: Dashboard,
+    conversations: Conversations,
+    knowledge: KnowledgeBase,
+    appearance: Appearance,
+    ai: AISettings,
+    leads: Leads,
+    settings: Settings,
+};
+
+export default function App() {
+    const [page, setPage] = useState('dashboard');
+    const Page = PAGES[page];
+
+    return (
+        <div className="app">
+            <aside className="sidebar">
+                <div className="sidebar-header">
+                    <div className="sidebar-logo">
+                        <div className="sidebar-logo-icon">N</div>
+                        <span className="sidebar-logo-text">NexusChat</span>
+                    </div>
+                </div>
+                <nav className="sidebar-nav">
+                    {NAV_ITEMS.map(item => (
+                        <button
+                            key={item.id}
+                            className={`nav-item ${page === item.id ? 'active' : ''}`}
+                            onClick={() => setPage(item.id)}
+                        >
+                            {item.icon}
+                            {item.label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="sidebar-footer">
+                    <div className="sidebar-avatar">A</div>
+                    <div>
+                        <div className="sidebar-user-name">Admin</div>
+                        <div className="sidebar-user-role">Owner</div>
+                    </div>
+                </div>
+            </aside>
+            <main className="main fadeIn" key={page}>
+                <Page />
+            </main>
+        </div>
+    );
+}
