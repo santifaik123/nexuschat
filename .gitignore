@@ -5,5 +5,4 @@ server/data/
 *.db-shm
 *.db-wal
 admin/dist/
-dist/
 .DS_Store
