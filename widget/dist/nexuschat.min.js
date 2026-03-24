@@ -4,7 +4,17 @@
 
     const DEFAULT_CONFIG = {
         tenantId: 'default',
-        serverUrl: 'http://localhost:3000',
+        serverUrl: (function () {
+            // Auto-detect: use the origin of the script tag, fallback to current page origin
+            try {
+                const scripts = document.querySelectorAll('script[src*="nexuschat"]');
+                if (scripts.length > 0) {
+                    const url = new URL(scripts[scripts.length - 1].src);
+                    return url.origin;
+                }
+            } catch (e) {}
+            return window.location.origin;
+        })(),
         position: 'bottom-right',
         primaryColor: '#4F46E5',
         secondaryColor: '#7C3AED',
