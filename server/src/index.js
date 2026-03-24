@@ -63,6 +63,9 @@ const aiEngine = new AIEngine(providerManager);
 
 // ============= Middleware =============
 
+// Trust Render/cloud proxy (required for rate limiting behind reverse proxy)
+app.set('trust proxy', 1);
+
 app.use(cors({
     origin: (origin, callback) => callback(null, true),
     credentials: true

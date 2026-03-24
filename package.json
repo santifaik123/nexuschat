@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "build": "cd admin && npm ci --include=dev && npm run build && cd ../widget && node build.js && cd ../server && npm ci"
   }
 }
