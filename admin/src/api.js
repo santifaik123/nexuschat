@@ -49,3 +49,8 @@ export const deleteLead = (id) => fetchAPI(`/admin/leads/${id}`, { method: 'DELE
 
 // AI Providers
 export const getProviders = () => fetchAPI('/admin/ai/providers');
+
+// Tenants
+export const getTenants = () => fetchAPI('/admin/tenants');
+export const createTenant = (name) => fetchAPI('/admin/tenants', { method: 'POST', body: { name } });
+export const deleteTenant = (id) => fetchAPI(`/admin/tenants/${id}`, { method: 'DELETE' });

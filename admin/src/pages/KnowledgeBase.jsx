@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getFAQs, createFAQ, updateFAQ, deleteFAQ, getDocuments, createDocument, deleteDocument } from '../api.js';
 
-export default function KnowledgeBase() {
+export default function KnowledgeBase({ tenantId = 'default' }) {
     const [tab, setTab] = useState('faqs');
     const [faqs, setFAQs] = useState([]);
     const [docs, setDocs] = useState([]);
@@ -12,12 +12,12 @@ export default function KnowledgeBase() {
 
     useEffect(() => {
         loadAll();
-    }, []);
+    }, [tenantId]);
 
     const loadAll = async () => {
         setLoading(true);
         try {
-            const [f, d] = await Promise.all([getFAQs(), getDocuments()]);
+            const [f, d] = await Promise.all([getFAQs(tenantId), getDocuments(tenantId)]);
             setFAQs(f);
             setDocs(d);
         } catch (e) { console.error(e); }
@@ -30,7 +30,7 @@ export default function KnowledgeBase() {
             if (editing) {
                 await updateFAQ(editing.id, form);
             } else {
-                await createFAQ(form);
+                await createFAQ({ ...form, tenantId });
             }
             setForm({ question: '', answer: '', category: 'General', priority: 0 });
             setEditing(null);
@@ -56,7 +56,7 @@ export default function KnowledgeBase() {
 
     const handleSaveDoc = async () => {
         if (!docForm.title || !docForm.content) return;
-        await createDocument(docForm);
+        await createDocument({ ...docForm, tenantId });
         setDocForm({ title: '', content: '', doc_type: 'text' });
         loadAll();
     };

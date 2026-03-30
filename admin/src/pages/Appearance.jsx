@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings } from '../api.js';
 
-export default function Appearance() {
+export default function Appearance({ tenantId = 'default' }) {
     const [settings, setSettings] = useState({});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        getSettings().then(setSettings).catch(console.error);
-    }, []);
+        getSettings(tenantId).then(setSettings).catch(console.error);
+    }, [tenantId]);
 
     const get = (key, def = '') => settings[key] ?? def;
     const set = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
@@ -27,7 +27,7 @@ export default function Appearance() {
                 'widget.language': get('widget.language', 'en'),
                 'widget.placeholder': get('widget.placeholder', 'Type your message...'),
                 'widget.logo_url': get('widget.logo_url', ''),
-            });
+            }, tenantId);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (e) { console.error(e); }

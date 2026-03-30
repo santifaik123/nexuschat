@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings, getProviders } from '../api.js';
 
-export default function AISettings() {
+export default function AISettings({ tenantId = 'default' }) {
     const [settings, setSettings] = useState({});
     const [providers, setProviders] = useState([]);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        Promise.all([getSettings(), getProviders()])
+        Promise.all([getSettings(tenantId), getProviders()])
             .then(([s, p]) => { setSettings(s); setProviders(p.providers || []); })
             .catch(console.error);
-    }, []);
+    }, [tenantId]);
 
     const get = (key, def = '') => settings[key] ?? def;
     const set = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
@@ -20,13 +20,13 @@ export default function AISettings() {
         setSaving(true);
         try {
             await updateSettings({
-                'ai.provider': get('ai.provider', 'fallback'),
+                'ai.provider': get('ai.provider', 'groq'),
                 'ai.model': get('ai.model', 'default'),
                 'ai.temperature': get('ai.temperature', '0.7'),
                 'ai.max_tokens': get('ai.max_tokens', '500'),
                 'ai.system_prompt': get('ai.system_prompt', ''),
                 'ai.tone': get('ai.tone', 'professional'),
-            });
+            }, tenantId);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (e) { console.error(e); }

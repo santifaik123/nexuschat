@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAnalytics, getConversations } from '../api.js';
 
-export default function Dashboard() {
+export default function Dashboard({ tenantId = 'default' }) {
     const [stats, setStats] = useState(null);
     const [recent, setRecent] = useState([]);
     const [days, setDays] = useState(7);
@@ -9,13 +9,13 @@ export default function Dashboard() {
 
     useEffect(() => {
         Promise.all([
-            getAnalytics(days),
-            getConversations({ limit: 5 })
+            getAnalytics(days, tenantId),
+            getConversations({ limit: 5, tenantId })
         ]).then(([s, c]) => {
             setStats(s);
             setRecent(c.conversations || []);
         }).catch(console.error).finally(() => setLoading(false));
-    }, [days]);
+    }, [days, tenantId]);
 
     if (loading) return <div className="empty-state"><p>Loading dashboard...</p></div>;
 

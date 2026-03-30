@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getLeads, deleteLead } from '../api.js';
 
-export default function Leads() {
+export default function Leads({ tenantId = 'default' }) {
     const [leads, setLeads] = useState([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [tenantId]);
 
     const load = async () => {
         setLoading(true);
         try {
-            const data = await getLeads({ limit: 50 });
+            const data = await getLeads({ limit: 50, tenantId });
             setLeads(data.leads || []);
             setTotal(data.total || 0);
         } catch (e) { console.error(e); }

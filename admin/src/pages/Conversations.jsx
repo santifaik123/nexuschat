@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getConversations, getConversationMessages } from '../api.js';
 
-export default function Conversations() {
+export default function Conversations({ tenantId = 'default' }) {
     const [conversations, setConversations] = useState([]);
     const [selected, setSelected] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -9,11 +9,11 @@ export default function Conversations() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getConversations({ status: filter || undefined, limit: 50 })
+        getConversations({ status: filter || undefined, limit: 50, tenantId })
             .then(data => setConversations(data.conversations || []))
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [filter]);
+    }, [filter, tenantId]);
 
     const viewConversation = async (conv) => {
         setSelected(conv);

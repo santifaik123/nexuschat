@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings } from '../api.js';
 
-export default function Settings() {
+export default function Settings({ tenantId = 'default' }) {
     const [settings, setSettings] = useState({});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [embedCode, setEmbedCode] = useState('');
 
     useEffect(() => {
-        getSettings().then(s => {
+        getSettings(tenantId).then(s => {
             setSettings(s);
-            generateEmbed(s);
+            generateEmbed(tenantId);
         }).catch(console.error);
-    }, []);
+    }, [tenantId]);
 
     const get = (key, def = '') => settings[key] ?? def;
     const set = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
 
-    const generateEmbed = (s) => {
+    const generateEmbed = (tid) => {
         const serverUrl = window.location.origin.replace(':5173', ':3000');
         setEmbedCode(`<!-- NexusChat Widget -->
 <script>
   window.NexusChatConfig = {
-    tenantId: 'default',
+    tenantId: '${tid}',
     serverUrl: '${serverUrl}',
   };
 </script>
@@ -42,7 +42,7 @@ export default function Settings() {
                 'leads.capture_after': get('leads.capture_after', '3'),
                 'rate_limit.max_requests': get('rate_limit.max_requests', '30'),
                 'rate_limit.window_minutes': get('rate_limit.window_minutes', '1'),
-            });
+            }, tenantId);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (e) { console.error(e); }

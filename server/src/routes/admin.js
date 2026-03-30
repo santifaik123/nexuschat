@@ -1,6 +1,34 @@
 import { Router } from 'express';
 import { query, queryOne, run, getDB } from '../db/database.js';
 
+// Default settings seeded for every new tenant
+const DEFAULT_TENANT_SETTINGS = {
+    'widget.name': 'NexusChat',
+    'widget.welcome_message': '👋 Hi there! How can I help you today?',
+    'widget.primary_color': '#4F46E5',
+    'widget.secondary_color': '#7C3AED',
+    'widget.position': 'bottom-right',
+    'widget.theme': 'light',
+    'widget.logo_url': '',
+    'widget.border_radius': '16',
+    'widget.language': 'en',
+    'widget.placeholder': 'Type your message...',
+    'widget.quick_replies': JSON.stringify(['Pricing', 'How it works', 'Contact support', 'FAQs']),
+    'ai.provider': 'groq',
+    'ai.model': 'default',
+    'ai.temperature': '0.7',
+    'ai.max_tokens': '500',
+    'ai.system_prompt': 'You are a helpful AI customer support assistant. Answer questions accurately and concisely.',
+    'ai.tone': 'professional',
+    'business.name': 'My Business',
+    'business.description': '',
+    'business.hours': 'Monday-Friday, 9 AM - 6 PM',
+    'business.contact_email': '',
+    'leads.enabled': 'true',
+    'leads.capture_after': '3',
+    'leads.fields': JSON.stringify(['name', 'email']),
+};
+
 const router = Router();
 
 // ============= Settings =============
@@ -130,6 +158,62 @@ router.delete('/leads/:id', async (req, res) => {
     } catch (err) {
         console.error('Lead delete error:', err);
         res.status(500).json({ error: 'Failed to delete lead' });
+    }
+});
+
+// ============= Tenants =============
+
+router.get('/tenants', async (req, res) => {
+    try {
+        const tenants = await query('SELECT id, name, created_at FROM tenants ORDER BY created_at ASC');
+        res.json({ tenants });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch tenants' });
+    }
+});
+
+router.post('/tenants', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+
+        const id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const existing = await queryOne('SELECT id FROM tenants WHERE id = ?', [id]);
+        if (existing) return res.status(409).json({ error: 'A tenant with that name already exists' });
+
+        const statements = [
+            { sql: 'INSERT INTO tenants (id, name) VALUES (?, ?)', args: [id, name.trim()] },
+            ...Object.entries(DEFAULT_TENANT_SETTINGS).map(([key, value]) => ({
+                sql: 'INSERT INTO settings (tenant_id, key, value) VALUES (?, ?, ?)',
+                args: [id, key, value]
+            }))
+        ];
+        await getDB().batch(statements, 'write');
+
+        res.json({ id, name: name.trim() });
+    } catch (err) {
+        console.error('Tenant create error:', err);
+        res.status(500).json({ error: 'Failed to create tenant' });
+    }
+});
+
+router.delete('/tenants/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (id === 'default') return res.status(400).json({ error: 'Cannot delete the default tenant' });
+        await getDB().batch([
+            { sql: 'DELETE FROM analytics_events WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM leads WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE tenant_id = ?)', args: [id] },
+            { sql: 'DELETE FROM conversations WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM faqs WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM documents WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM settings WHERE tenant_id = ?', args: [id] },
+            { sql: 'DELETE FROM tenants WHERE id = ?', args: [id] },
+        ], 'write');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete tenant' });
     }
 });
 
