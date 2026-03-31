@@ -1,17 +1,43 @@
 const API = '/api';
 
+const getToken = () => localStorage.getItem('nexuschat_token');
+
 export async function fetchAPI(path, options = {}) {
+    const token = getToken();
     const res = await fetch(`${API}${path}`, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...options.headers,
+        },
         ...options,
         body: options.body ? JSON.stringify(options.body) : undefined,
     });
+    if (res.status === 401) {
+        localStorage.removeItem('nexuschat_token');
+        window.dispatchEvent(new Event('nexuschat:unauthorized'));
+        throw new Error('Unauthorized');
+    }
     if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Request failed' }));
         throw new Error(err.error || 'Request failed');
     }
     return res.json();
 }
+
+// Auth
+export const login = async (username, password) => {
+    const res = await fetch(`${API}/admin/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Invalid credentials' }));
+        throw new Error(err.error || 'Invalid credentials');
+    }
+    return res.json();
+};
 
 // Settings
 export const getSettings = (tenantId = 'default') => fetchAPI(`/admin/settings?tenantId=${tenantId}`);

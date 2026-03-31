@@ -20,6 +20,7 @@ import configRouter from './routes/config.js';
 import knowledgeRouter from './routes/knowledge.js';
 import adminRouter from './routes/admin.js';
 import analyticsRouter from './routes/analytics.js';
+import { requireAuth } from './middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -118,9 +119,13 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/api/chat', chatLimiter, createChatRouter(aiEngine));
 app.use('/api/config', configRouter);
-app.use('/api/knowledge', adminLimiter, knowledgeRouter);
-app.use('/api/admin', adminLimiter, adminRouter);
-app.use('/api/analytics', adminLimiter, analyticsRouter);
+app.use('/api/knowledge', adminLimiter, requireAuth, knowledgeRouter);
+app.use('/api/admin', adminLimiter, (req, res, next) => {
+    // Login endpoint is public, everything else requires auth
+    if (req.path === '/auth/login' && req.method === 'POST') return next();
+    requireAuth(req, res, next);
+}, adminRouter);
+app.use('/api/analytics', adminLimiter, requireAuth, analyticsRouter);
 
 // ============= Static Files =============
 
