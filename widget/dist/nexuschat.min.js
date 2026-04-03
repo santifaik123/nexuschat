@@ -989,62 +989,57 @@
         }
 
         _formatMessage(text) {
+            // Step 1: extract CTAs and SUGGEST before any escaping or URL processing
+            const ctas = [];
+            text = text.replace(/\[CTA:\s*([^|\]]+)\|\s*([^\]]+)\]/gi, (_, label, url) => {
+                const i = ctas.length;
+                ctas.push({ label: label.trim(), url: url.trim() });
+                return `\x00CTA${i}\x00`;
+            });
+            text = text.replace(/\[SUGGEST:[^\]]*\]/gi, '');
+
+            // Step 2: escape HTML
             let html = this._escapeHtml(text);
 
-            // Headers ### Title
-            html = html.replace(/^###\s+(.+)$/gm,
-                '<div class="nc-msg-header">$1</div>'
-            );
-
-            // Callout > text
-            html = html.replace(/^&gt;\s+(.+)$/gm,
-                '<div class="nc-callout">$1</div>'
-            );
-
-            // Bold and italic
+            // Step 3: markdown formatting
+            html = html.replace(/^###\s+(.+)$/gm, '<div class="nc-msg-header">$1</div>');
+            html = html.replace(/^&gt;\s+(.+)$/gm, '<div class="nc-callout">$1</div>');
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-            // Divider ---
             html = html.replace(/^---$/gm, '<hr class="nc-divider"/>');
 
-            // Numbered lists (consecutive 1. 2. 3. lines)
+            // Numbered lists
             html = html.replace(/((?:^\d+\.\s+.+\n?)+)/gm, (block) => {
-                const items = block.trim().split('\n').map((line, i) =>
-                    line.replace(/^\d+\.\s+/, '').trim()
-                ).filter(Boolean).map((item, i) =>
-                    `<div class="nc-num-item"><span class="nc-num">${i + 1}</span><span>${item}</span></div>`
-                ).join('');
+                const items = block.trim().split('\n')
+                    .map(l => l.replace(/^\d+\.\s+/, '').trim()).filter(Boolean)
+                    .map((item, i) => `<div class="nc-num-item"><span class="nc-num">${i + 1}</span><span>${item}</span></div>`)
+                    .join('');
                 return `<div class="nc-numbered-list">${items}</div>`;
             });
 
-            // Bullet points (consecutive - lines)
+            // Bullet lists
             html = html.replace(/((?:^[-•]\s+.+\n?)+)/gm, (block) => {
-                const items = block.trim().split('\n').map(line =>
-                    line.replace(/^[-•]\s+/, '').trim()
-                ).filter(Boolean).map(item =>
-                    `<div class="nc-bullet-item"><span class="nc-bullet-dot">›</span><span>${item}</span></div>`
-                ).join('');
+                const items = block.trim().split('\n')
+                    .map(l => l.replace(/^[-•]\s+/, '').trim()).filter(Boolean)
+                    .map(item => `<div class="nc-bullet-item"><span class="nc-bullet-dot">›</span><span>${item}</span></div>`)
+                    .join('');
                 return `<div class="nc-bullet-list">${items}</div>`;
             });
 
-            // Highlight prices
-            html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g,
-                '<span class="nc-price">$1</span>'
-            );
+            // Price highlight
+            html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g, '<span class="nc-price">$1</span>');
 
-            // Safety net: strip any unprocessed [SUGGEST:...] blocks
-            html = html.replace(/\[SUGGEST:[^\]]*\]/gi, '');
-
-            // Auto-link plain URLs (must run before CTA to avoid double-processing)
-            html = html.replace(/(https?:\/\/[^\s<"\]]+)/g,
+            // Auto-link plain URLs (CTAs are placeholders so they're safe)
+            html = html.replace(/(https?:\/\/[^\s<"]+)/g,
                 '<a href="$1" target="_blank" rel="noopener" class="nc-link">$1</a>'
             );
 
-            // CTA buttons [CTA: label | url] — runs last so auto-link doesn't touch its href
-            html = html.replace(/\[CTA:\s*([^|]+)\|\s*([^\]]+)\]/gi, (_, label, url) =>
-                `<a href="${url.trim()}" target="_blank" rel="noopener" class="nc-cta-btn">${label.trim()} →</a>`
-            );
+            // Step 4: restore CTAs as styled buttons
+            ctas.forEach(({ label, url }, i) => {
+                html = html.replace(`\x00CTA${i}\x00`,
+                    `<a href="${url}" target="_blank" rel="noopener" class="nc-cta-btn">${label} →</a>`
+                );
+            });
 
             // Line breaks
             html = html.replace(/\n/g, '<br>');
