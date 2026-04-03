@@ -779,13 +779,34 @@
         }
 
         _formatMessage(text) {
-            // Basic markdown-like formatting
             let html = this._escapeHtml(text);
+
+            // Headers (### Title)
+            html = html.replace(/^###\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:var(--nc-primary);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.05em">$1</div>');
+
+            // Bold and italic
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Divider ---
+            html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--nc-border);margin:8px 0"/>');
+
+            // Bullet points (collect consecutive lines into a group)
+            html = html.replace(/((?:^[-•]\s+.+\n?)+)/gm, (block) => {
+                const items = block.trim().split('\n').map(line =>
+                    line.replace(/^[-•]\s+/, '').trim()
+                ).filter(Boolean).map(item =>
+                    `<div style="display:flex;gap:6px;align-items:flex-start;margin:2px 0"><span style="color:var(--nc-primary);font-weight:700;flex-shrink:0">›</span><span>${item}</span></div>`
+                ).join('');
+                return `<div style="display:flex;flex-direction:column;gap:1px;margin:4px 0">${items}</div>`;
+            });
+
+            // Highlight prices ($000.000)
+            html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g, '<span style="font-weight:700;color:var(--nc-primary)">$1</span>');
+
+            // Line breaks
             html = html.replace(/\n/g, '<br>');
-            // Bullet points
-            html = html.replace(/^[-•]\s+(.+)/gm, '<span style="display:flex;gap:6px;align-items:flex-start"><span>•</span><span>$1</span></span>');
+
             return html;
         }
     }
