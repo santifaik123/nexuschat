@@ -20,7 +20,7 @@ import configRouter from './routes/config.js';
 import knowledgeRouter from './routes/knowledge.js';
 import adminRouter from './routes/admin.js';
 import analyticsRouter from './routes/analytics.js';
-import { requireAuth } from './middleware/auth.js';
+import { requireAuth, signToken } from './middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -119,12 +119,20 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/api/chat', chatLimiter, createChatRouter(aiEngine));
 app.use('/api/config', configRouter);
+
+// Login — public, registered BEFORE the protected admin middleware
+app.post('/api/admin/auth/login', adminLimiter, (req, res) => {
+    const { username, password } = req.body || {};
+    const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
+    const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
+    if ((username || '').trim() !== adminUser || (password || '').trim() !== adminPass) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    res.json({ token: signToken() });
+});
+
 app.use('/api/knowledge', adminLimiter, requireAuth, knowledgeRouter);
-app.use('/api/admin', adminLimiter, (req, res, next) => {
-    // Login endpoint is public, everything else requires auth
-    if (req.path === '/auth/login' && req.method === 'POST') return next();
-    requireAuth(req, res, next);
-}, adminRouter);
+app.use('/api/admin', adminLimiter, requireAuth, adminRouter);
 app.use('/api/analytics', adminLimiter, requireAuth, analyticsRouter);
 
 // ============= Static Files =============

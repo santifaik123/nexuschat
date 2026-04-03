@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { query, queryOne, run, getDB } from '../db/database.js';
-import { signToken } from '../middleware/auth.js';
 
 // Default settings seeded for every new tenant
 const DEFAULT_TENANT_SETTINGS = {
@@ -31,20 +30,6 @@ const DEFAULT_TENANT_SETTINGS = {
 };
 
 const router = Router();
-
-// ============= Auth =============
-
-router.post('/auth/login', (req, res) => {
-    const { username, password } = req.body;
-    const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
-    const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
-    const inputUser = (username || '').trim();
-    const inputPass = (password || '').trim();
-    if (!inputUser || !inputPass || inputUser !== adminUser || inputPass !== adminPass) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    res.json({ token: signToken() });
-});
 
 // ============= Settings =============
 
