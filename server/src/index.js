@@ -125,7 +125,10 @@ app.post('/api/admin/auth/login', adminLimiter, (req, res) => {
     const { username, password } = req.body || {};
     const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
     const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
-    if ((username || '').trim() !== adminUser || (password || '').trim() !== adminPass) {
+    const inputUser = (username || '').trim();
+    const inputPass = (password || '').trim();
+    console.log(`[LOGIN] expected="${adminUser}" got="${inputUser}" match=${inputUser === adminUser}`);
+    if (inputUser !== adminUser || inputPass !== adminPass) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
     res.json({ token: signToken() });
