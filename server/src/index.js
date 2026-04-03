@@ -120,6 +120,8 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/chat', chatLimiter, createChatRouter(aiEngine));
 app.use('/api/config', configRouter);
 
+console.log(`[AUTH] USERNAME="${process.env.ADMIN_USERNAME || 'admin(default)'}" PASSWORD_LENGTH=${(process.env.ADMIN_PASSWORD || 'admin').length}`);
+
 // Login — public
 app.post('/api/admin/auth/login', adminLimiter, (req, res) => {
     const { username, password } = req.body || {};
