@@ -991,11 +991,6 @@
         _formatMessage(text) {
             let html = this._escapeHtml(text);
 
-            // CTA buttons [CTA: label | url]
-            html = html.replace(/\[CTA:\s*([^|]+)\|\s*([^\]]+)\]/gi, (_, label, url) =>
-                `<a href="${url.trim()}" target="_blank" rel="noopener" class="nc-cta-btn">${label.trim()} →</a>`
-            );
-
             // Headers ### Title
             html = html.replace(/^###\s+(.+)$/gm,
                 '<div class="nc-msg-header">$1</div>'
@@ -1033,18 +1028,23 @@
                 return `<div class="nc-bullet-list">${items}</div>`;
             });
 
-            // Auto-link URLs
-            html = html.replace(/(https?:\/\/[^\s<"]+)/g,
-                '<a href="$1" target="_blank" rel="noopener" class="nc-link">$1</a>'
-            );
-
             // Highlight prices
             html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g,
                 '<span class="nc-price">$1</span>'
             );
 
-            // Safety net: strip any unprocessed [SYNTAX:...] blocks
-            html = html.replace(/\[(?:SUGGEST|CTA):[^\]]*\]/gi, '');
+            // Safety net: strip any unprocessed [SUGGEST:...] blocks
+            html = html.replace(/\[SUGGEST:[^\]]*\]/gi, '');
+
+            // Auto-link plain URLs (must run before CTA to avoid double-processing)
+            html = html.replace(/(https?:\/\/[^\s<"\]]+)/g,
+                '<a href="$1" target="_blank" rel="noopener" class="nc-link">$1</a>'
+            );
+
+            // CTA buttons [CTA: label | url] — runs last so auto-link doesn't touch its href
+            html = html.replace(/\[CTA:\s*([^|]+)\|\s*([^\]]+)\]/gi, (_, label, url) =>
+                `<a href="${url.trim()}" target="_blank" rel="noopener" class="nc-cta-btn">${label.trim()} →</a>`
+            );
 
             // Line breaks
             html = html.replace(/\n/g, '<br>');
