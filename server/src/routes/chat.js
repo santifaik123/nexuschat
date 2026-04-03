@@ -71,8 +71,9 @@ export function createChatRouter(aiEngine) {
             const suggestMatch = result.content.match(/\[SUGGEST:\s*([^\]]+)\]/i);
             if (suggestMatch) {
                 suggestions = suggestMatch[1].split('|').map(s => s.trim()).filter(Boolean).slice(0, 4);
-                result.content = result.content.replace(/\[SUGGEST:[^\]]+\]/i, '').trim();
             }
+            // Strip ALL [SUGGEST:...] from content (rendered as chips, not text)
+            result.content = result.content.replace(/\[SUGGEST:[^\]]*\]/gi, '').trim();
 
             // Save assistant message
             await run(

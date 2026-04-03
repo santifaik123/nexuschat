@@ -28,6 +28,8 @@
         logoUrl: '',
         showBranding: true,
         zIndex: 999999,
+        proactiveDelay: 0,
+        proactiveMessage: '',
     };
 
     const TRANSLATIONS = {
@@ -1040,6 +1042,9 @@
             html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g,
                 '<span class="nc-price">$1</span>'
             );
+
+            // Safety net: strip any unprocessed [SYNTAX:...] blocks
+            html = html.replace(/\[(?:SUGGEST|CTA):[^\]]*\]/gi, '');
 
             // Line breaks
             html = html.replace(/\n/g, '<br>');

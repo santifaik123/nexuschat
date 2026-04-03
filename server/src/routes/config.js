@@ -19,7 +19,7 @@ router.get('/:tenantId', async (req, res) => {
 
         const config = {};
         for (const s of settings) {
-            const key = s.key.replace('widget.', '');
+            const key = s.key.replace('widget.', '').replace('proactive.', 'proactive_');
             try {
                 config[key] = JSON.parse(s.value);
             } catch {
