@@ -19,8 +19,19 @@ export class AIEngine {
         // 3. Build messages array
         const messages = [];
 
-        // System prompt with business context
-        let fullSystemPrompt = systemPrompt;
+        // System prompt with tone + business context
+        const tone = settings['ai.tone'] || 'professional';
+        const toneInstructions = {
+            professional: 'You are a professional and helpful assistant. Be clear, concise, and courteous.',
+            friendly: 'You are a friendly and warm assistant. Be approachable, positive, and conversational.',
+            casual: 'You are a casual and relaxed assistant. Use simple, everyday language and be easy-going.',
+            formal: 'You are a formal and precise assistant. Use formal language, avoid contractions, and be thorough.',
+            technical: 'You are a technical assistant. Be precise, detailed, and use technical terminology when appropriate.',
+        };
+        let fullSystemPrompt = systemPrompt || toneInstructions[tone] || toneInstructions.professional;
+        if (systemPrompt && tone) {
+            fullSystemPrompt = `${toneInstructions[tone] || ''}\n\n${systemPrompt}`.trim();
+        }
         if (businessContext) {
             fullSystemPrompt += `\n\n--- Business Information ---\n${businessContext}`;
         }
