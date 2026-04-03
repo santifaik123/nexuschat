@@ -9,7 +9,7 @@ router.get('/:tenantId', async (req, res) => {
         const { tenantId } = req.params;
 
         const settings = await query(
-            "SELECT key, value FROM settings WHERE tenant_id = ? AND key LIKE 'widget.%'",
+            "SELECT key, value FROM settings WHERE tenant_id = ? AND (key LIKE 'widget.%' OR key LIKE 'proactive.%')",
             [tenantId]
         );
 

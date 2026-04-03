@@ -66,6 +66,14 @@ export function createChatRouter(aiEngine) {
                 history.slice(0, -1) // exclude the just-added message
             );
 
+            // Parse inline suggestions from AI response [SUGGEST: a | b | c]
+            let suggestions = [];
+            const suggestMatch = result.content.match(/\[SUGGEST:\s*([^\]]+)\]/i);
+            if (suggestMatch) {
+                suggestions = suggestMatch[1].split('|').map(s => s.trim()).filter(Boolean).slice(0, 4);
+                result.content = result.content.replace(/\[SUGGEST:[^\]]+\]/i, '').trim();
+            }
+
             // Save assistant message
             await run(
                 `INSERT INTO messages (conversation_id, role, content, source, confidence)
@@ -109,6 +117,7 @@ export function createChatRouter(aiEngine) {
                 source: result.source,
                 confidence: result.confidence,
                 responseTime: result.responseTime,
+                suggestions,
                 shouldCaptureLead,
                 leadFields: shouldCaptureLead ? JSON.parse(settings['leads.fields'] || '["name","email"]') : undefined
             });
@@ -149,6 +158,25 @@ export function createChatRouter(aiEngine) {
         } catch (err) {
             console.error('Lead capture error:', err);
             res.status(500).json({ error: 'Failed to save lead information' });
+        }
+    });
+
+    // Message feedback (thumbs up/down)
+    router.post('/feedback', async (req, res) => {
+        try {
+            const { conversationId, rating } = req.body;
+            if (!conversationId || !['up', 'down'].includes(rating)) {
+                return res.status(400).json({ error: 'Invalid feedback' });
+            }
+            await run(
+                `INSERT INTO analytics_events (tenant_id, event_type, event_data)
+                 SELECT tenant_id, 'message_feedback', ? FROM conversations WHERE id = ?`,
+                [JSON.stringify({ conversation_id: conversationId, rating }), conversationId]
+            );
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Feedback error:', err);
+            res.status(500).json({ error: 'Failed to save feedback' });
         }
     });
 

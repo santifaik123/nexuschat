@@ -76,11 +76,24 @@
                     if (remote.language) { this.config.language = remote.language; this.t = TRANSLATIONS[remote.language] || TRANSLATIONS.en; }
                     if (remote.quick_replies) this.config.quickReplies = remote.quick_replies;
                     if (remote.logo_url) this.config.logoUrl = remote.logo_url;
+                    if (remote.proactive_delay) this.config.proactiveDelay = parseInt(remote.proactive_delay);
+                    if (remote.proactive_message) this.config.proactiveMessage = remote.proactive_message;
                 }
             } catch (e) { /* Use defaults */ }
 
             this._createWidget();
             this._attachEvents();
+
+            // Proactive message
+            if (this.config.proactiveDelay > 0 && this.config.proactiveMessage && !sessionStorage.getItem('nexuschat_proactive_shown')) {
+                setTimeout(() => {
+                    if (!this.isOpen) {
+                        this.open();
+                        this._addBotMessage(this.config.proactiveMessage);
+                        sessionStorage.setItem('nexuschat_proactive_shown', '1');
+                    }
+                }, this.config.proactiveDelay * 1000);
+            }
         }
 
         _createWidget() {
@@ -553,6 +566,158 @@
         }
         .nc-lead-skip:hover { border-color: var(--nc-text-muted); }
 
+        /* ============= Message Footer (time + feedback) ============= */
+        .nc-msg-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 4px;
+          min-height: 20px;
+        }
+        .nc-feedback {
+          display: flex;
+          gap: 4px;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        .nc-msg-bot:hover .nc-feedback { opacity: 1; }
+        .nc-feedback-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 13px;
+          padding: 0 2px;
+          transition: transform 0.2s;
+          line-height: 1;
+        }
+        .nc-feedback-btn:hover { transform: scale(1.2); }
+
+        /* ============= Inline Suggestions ============= */
+        .nc-inline-suggestions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 10px;
+        }
+        .nc-inline-suggest {
+          background: transparent;
+          border: 1.5px solid var(--nc-primary);
+          color: var(--nc-primary);
+          padding: 5px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .nc-inline-suggest:hover {
+          background: var(--nc-primary);
+          color: white;
+          transform: translateY(-1px);
+        }
+
+        /* ============= Rich Formatting ============= */
+        .nc-msg-header {
+          font-weight: 700;
+          font-size: 11px;
+          color: var(--nc-primary);
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+          margin: 10px 0 4px;
+        }
+        .nc-msg-header:first-child { margin-top: 0; }
+
+        .nc-callout {
+          background: rgba(79,70,229,0.08);
+          border-left: 3px solid var(--nc-primary);
+          padding: 8px 12px;
+          border-radius: 0 8px 8px 0;
+          margin: 6px 0;
+          font-size: 13px;
+        }
+
+        .nc-divider {
+          border: none;
+          border-top: 1px solid var(--nc-border);
+          margin: 8px 0;
+        }
+
+        .nc-numbered-list {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin: 6px 0;
+        }
+        .nc-num-item {
+          display: flex;
+          gap: 8px;
+          align-items: flex-start;
+        }
+        .nc-num {
+          background: var(--nc-primary);
+          color: white;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .nc-bullet-list {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          margin: 6px 0;
+        }
+        .nc-bullet-item {
+          display: flex;
+          gap: 6px;
+          align-items: flex-start;
+        }
+        .nc-bullet-dot {
+          color: var(--nc-primary);
+          font-weight: 700;
+          flex-shrink: 0;
+          font-size: 15px;
+          line-height: 1.3;
+        }
+
+        .nc-price {
+          font-weight: 700;
+          color: var(--nc-primary);
+        }
+
+        .nc-link {
+          color: var(--nc-primary);
+          text-decoration: underline;
+          word-break: break-all;
+        }
+
+        .nc-cta-btn {
+          display: inline-block;
+          background: linear-gradient(135deg, var(--nc-primary), var(--nc-secondary));
+          color: white !important;
+          text-decoration: none !important;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+          margin: 8px 0 4px;
+          transition: opacity 0.2s, transform 0.2s;
+          box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+        }
+        .nc-cta-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+
         /* ============= Branding ============= */
         .nc-branding {
           text-align: center;
@@ -664,7 +829,7 @@
 
                 if (resp.ok) {
                     this.conversationId = data.conversationId;
-                    this._addBotMessage(data.message);
+                    this._addBotMessage(data.message, data.suggestions || []);
 
                     // Lead capture
                     if (data.shouldCaptureLead && !this.leadCaptured) {
@@ -693,20 +858,63 @@
             this._scrollToBottom();
         }
 
-        _addBotMessage(text) {
+        _addBotMessage(text, suggestions = []) {
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const avatar = this.config.name.charAt(0).toUpperCase();
             const el = document.createElement('div');
             el.className = 'nc-msg nc-msg-bot';
+
+            const suggestionsHtml = suggestions.length > 0
+                ? `<div class="nc-inline-suggestions">${suggestions.map(s =>
+                    `<button class="nc-inline-suggest">${s}</button>`).join('')}</div>`
+                : '';
+
             el.innerHTML = `
         <div class="nc-msg-avatar">${avatar}</div>
         <div class="nc-msg-content">
           <div class="nc-msg-bubble">${this._formatMessage(text)}</div>
-          <div class="nc-msg-time">${time}</div>
+          ${suggestionsHtml}
+          <div class="nc-msg-footer">
+            <span class="nc-msg-time">${time}</span>
+            <div class="nc-feedback">
+              <button class="nc-feedback-btn" data-rating="up" title="Útil">👍</button>
+              <button class="nc-feedback-btn" data-rating="down" title="No útil">👎</button>
+            </div>
+          </div>
         </div>
       `;
+
+            // Feedback buttons
+            el.querySelectorAll('.nc-feedback-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this._sendFeedback(btn.dataset.rating);
+                    el.querySelectorAll('.nc-feedback-btn').forEach(b => b.style.opacity = '0.3');
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'scale(1.3)';
+                });
+            });
+
+            // Inline suggestion clicks
+            el.querySelectorAll('.nc-inline-suggest').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this._sendMessage(btn.textContent);
+                    el.querySelector('.nc-inline-suggestions').remove();
+                });
+            });
+
             this.els.messages.insertBefore(el, this.els.typingIndicator);
             this._scrollToBottom();
+        }
+
+        async _sendFeedback(rating) {
+            if (!this.conversationId) return;
+            try {
+                await fetch(`${this.config.serverUrl}/api/chat/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ conversationId: this.conversationId, rating })
+                });
+            } catch (e) { /* silently fail */ }
         }
 
         _showTyping() {
@@ -781,28 +989,57 @@
         _formatMessage(text) {
             let html = this._escapeHtml(text);
 
-            // Headers (### Title)
-            html = html.replace(/^###\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:var(--nc-primary);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.05em">$1</div>');
+            // CTA buttons [CTA: label | url]
+            html = html.replace(/\[CTA:\s*([^|]+)\|\s*([^\]]+)\]/gi, (_, label, url) =>
+                `<a href="${url.trim()}" target="_blank" rel="noopener" class="nc-cta-btn">${label.trim()} →</a>`
+            );
+
+            // Headers ### Title
+            html = html.replace(/^###\s+(.+)$/gm,
+                '<div class="nc-msg-header">$1</div>'
+            );
+
+            // Callout > text
+            html = html.replace(/^&gt;\s+(.+)$/gm,
+                '<div class="nc-callout">$1</div>'
+            );
 
             // Bold and italic
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
             // Divider ---
-            html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--nc-border);margin:8px 0"/>');
+            html = html.replace(/^---$/gm, '<hr class="nc-divider"/>');
 
-            // Bullet points (collect consecutive lines into a group)
+            // Numbered lists (consecutive 1. 2. 3. lines)
+            html = html.replace(/((?:^\d+\.\s+.+\n?)+)/gm, (block) => {
+                const items = block.trim().split('\n').map((line, i) =>
+                    line.replace(/^\d+\.\s+/, '').trim()
+                ).filter(Boolean).map((item, i) =>
+                    `<div class="nc-num-item"><span class="nc-num">${i + 1}</span><span>${item}</span></div>`
+                ).join('');
+                return `<div class="nc-numbered-list">${items}</div>`;
+            });
+
+            // Bullet points (consecutive - lines)
             html = html.replace(/((?:^[-•]\s+.+\n?)+)/gm, (block) => {
                 const items = block.trim().split('\n').map(line =>
                     line.replace(/^[-•]\s+/, '').trim()
                 ).filter(Boolean).map(item =>
-                    `<div style="display:flex;gap:6px;align-items:flex-start;margin:2px 0"><span style="color:var(--nc-primary);font-weight:700;flex-shrink:0">›</span><span>${item}</span></div>`
+                    `<div class="nc-bullet-item"><span class="nc-bullet-dot">›</span><span>${item}</span></div>`
                 ).join('');
-                return `<div style="display:flex;flex-direction:column;gap:1px;margin:4px 0">${items}</div>`;
+                return `<div class="nc-bullet-list">${items}</div>`;
             });
 
-            // Highlight prices ($000.000)
-            html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g, '<span style="font-weight:700;color:var(--nc-primary)">$1</span>');
+            // Auto-link URLs
+            html = html.replace(/(https?:\/\/[^\s<"]+)/g,
+                '<a href="$1" target="_blank" rel="noopener" class="nc-link">$1</a>'
+            );
+
+            // Highlight prices
+            html = html.replace(/(\$[\d.,]+(?:\s*CLP)?)/g,
+                '<span class="nc-price">$1</span>'
+            );
 
             // Line breaks
             html = html.replace(/\n/g, '<br>');
