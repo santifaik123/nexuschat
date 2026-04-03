@@ -36,9 +36,11 @@ const router = Router();
 
 router.post('/auth/login', (req, res) => {
     const { username, password } = req.body;
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin';
-    if (!username || !password || username !== adminUser || password !== adminPass) {
+    const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
+    const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
+    const inputUser = (username || '').trim();
+    const inputPass = (password || '').trim();
+    if (!inputUser || !inputPass || inputUser !== adminUser || inputPass !== adminPass) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
     res.json({ token: signToken() });
