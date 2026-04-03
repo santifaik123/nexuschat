@@ -32,7 +32,7 @@ const PAGES = {
 };
 
 export default function App() {
-    const [authed, setAuthed] = useState(true);
+    const [authed, setAuthed] = useState(!!localStorage.getItem('nexuschat_token'));
     const [page, setPage] = useState('clients');
     const [tenantId, setTenantId] = useState('default');
     const [tenants, setTenants] = useState([{ id: 'default', name: 'Default' }]);
