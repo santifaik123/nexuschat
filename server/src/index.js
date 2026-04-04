@@ -126,6 +126,8 @@ app.post('/api/auth/login', adminLimiter, (req, res) => {
     const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
     const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
     if ((username || '').trim() !== adminUser || (password || '').trim() !== adminPass) {
+        const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+        console.warn(`[AUTH] Failed login attempt — user: "${username || ''}", ip: ${ip}`);
         return res.status(401).json({ error: 'Invalid credentials' });
     }
     res.json({ token: signToken() });

@@ -111,6 +111,36 @@ router.get('/conversations', async (req, res) => {
     }
 });
 
+// Delete resolved conversations older than N days (default 30)
+router.delete('/conversations/cleanup', async (req, res) => {
+    try {
+        const { tenantId = 'default', days = 30 } = req.query;
+        const daysInt = Math.max(1, Math.min(365, parseInt(days) || 30));
+        const intervalStr = `-${daysInt} days`;
+
+        const old = await query(
+            `SELECT id FROM conversations WHERE tenant_id = ? AND status = 'resolved' AND updated_at < datetime('now', ?)`,
+            [tenantId, intervalStr]
+        );
+
+        if (old.length === 0) return res.json({ deleted: 0 });
+
+        for (const conv of old) {
+            await run('DELETE FROM messages WHERE conversation_id = ?', [conv.id]);
+        }
+        await run(
+            `DELETE FROM conversations WHERE tenant_id = ? AND status = 'resolved' AND updated_at < datetime('now', ?)`,
+            [tenantId, intervalStr]
+        );
+
+        console.log(`[CLEANUP] Deleted ${old.length} resolved conversations older than ${daysInt} days for tenant: ${tenantId}`);
+        res.json({ deleted: old.length });
+    } catch (err) {
+        console.error('Cleanup error:', err);
+        res.status(500).json({ error: 'Failed to cleanup conversations' });
+    }
+});
+
 // Get messages for a conversation
 router.get('/conversations/:id/messages', async (req, res) => {
     try {

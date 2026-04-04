@@ -2,6 +2,15 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { query, queryOne, run } from '../db/database.js';
 
+const validateTenant = async (tenantId, res) => {
+    const tenant = await queryOne('SELECT id FROM tenants WHERE id = ?', [tenantId]);
+    if (!tenant) {
+        res.status(404).json({ error: 'Tenant not found' });
+        return false;
+    }
+    return true;
+};
+
 export function createChatRouter(aiEngine) {
     const router = Router();
 
@@ -17,6 +26,8 @@ export function createChatRouter(aiEngine) {
             if (message.length > 2000) {
                 return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
             }
+
+            if (!await validateTenant(tenantId, res)) return;
 
             const sid = sessionId || uuid();
 
@@ -136,6 +147,8 @@ export function createChatRouter(aiEngine) {
     router.post('/lead', async (req, res) => {
         try {
             const { tenantId = 'default', conversationId, name, email, phone, message } = req.body;
+
+            if (!await validateTenant(tenantId, res)) return;
 
             await run(
                 `INSERT INTO leads (tenant_id, conversation_id, name, email, phone, message)

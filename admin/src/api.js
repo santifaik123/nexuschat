@@ -80,3 +80,7 @@ export const getProviders = () => fetchAPI('/admin/ai/providers');
 export const getTenants = () => fetchAPI('/admin/tenants');
 export const createTenant = (name) => fetchAPI('/admin/tenants', { method: 'POST', body: { name } });
 export const deleteTenant = (id) => fetchAPI(`/admin/tenants/${id}`, { method: 'DELETE' });
+
+// Cleanup
+export const cleanupConversations = (tenantId = 'default', days = 30) =>
+    fetchAPI(`/admin/conversations/cleanup?tenantId=${tenantId}&days=${days}`, { method: 'DELETE' });
