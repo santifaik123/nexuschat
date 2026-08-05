@@ -21,10 +21,22 @@ import configRouter from './routes/config.js';
 import knowledgeRouter from './routes/knowledge.js';
 import adminRouter from './routes/admin.js';
 import analyticsRouter from './routes/analytics.js';
+import intakeRouter from './routes/intake.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DEFAULT_ORIGINS = [
+    'https://nuvik.digital',
+    'https://www.nuvik.digital',
+    'https://nexuschat-cgat.onrender.com',
+];
+const allowedOrigins = new Set(
+    (process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS.join(','))
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean)
+);
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, '..', 'data');
@@ -68,8 +80,11 @@ const aiEngine = new AIEngine(providerManager);
 app.set('trust proxy', 1);
 
 app.use(cors({
-    origin: (origin, callback) => callback(null, true),
-    credentials: true
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+        return callback(new Error('cors_denied'));
+    },
+    credentials: false
 }));
 
 app.use(helmet({
@@ -90,6 +105,13 @@ const chatLimiter = rateLimit({
 const adminLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const intakeLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -119,6 +141,7 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/api/chat', chatLimiter, createChatRouter(aiEngine));
 app.use('/api/config', configRouter);
+app.use('/api/intake', intakeLimiter, intakeRouter);
 
 // Login — completely outside /api/admin to avoid auth middleware
 app.post('/api/auth/login', adminLimiter, (req, res) => {
@@ -126,8 +149,7 @@ app.post('/api/auth/login', adminLimiter, (req, res) => {
     const adminUser = (process.env.ADMIN_USERNAME || 'admin').trim();
     const adminPass = (process.env.ADMIN_PASSWORD || 'admin').trim();
     if ((username || '').trim() !== adminUser || (password || '').trim() !== adminPass) {
-        const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-        console.warn(`[AUTH] Failed login attempt — user: "${username || ''}", ip: ${ip}`);
+        console.warn('[AUTH] Failed login attempt');
         return res.status(401).json({ error: 'Invalid credentials' });
     }
     res.json({ token: signToken() });
@@ -159,7 +181,8 @@ if (fs.existsSync(adminDist)) {
 // ============= Error handling =============
 
 app.use((err, req, res, next) => {
-    console.error('Server error:', err);
+    if (err?.message === 'cors_denied') return res.status(403).json({ error: 'Origin not allowed' });
+    console.error('Server error:', err?.name || 'unknown_error');
     res.status(500).json({ error: 'Internal server error' });
 });
 
