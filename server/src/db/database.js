@@ -33,6 +33,7 @@ export async function run(sql, args = []) {
 export async function initDB() {
     await initSchema();
     await seedDefaults();
+    await seedNuvikWidgetDesign();
 }
 
 async function initSchema() {
@@ -141,6 +142,45 @@ async function initSchema() {
     ];
 
     await getDB().batch(statements, 'write');
+
+    await ensureLeadColumn('external_id', 'TEXT');
+    await ensureLeadColumn('source', "TEXT NOT NULL DEFAULT 'nexus_chat'");
+    await ensureLeadColumn('company', 'TEXT');
+    await ensureLeadColumn('inquiry_type', 'TEXT');
+    await ensureLeadColumn('status', "TEXT NOT NULL DEFAULT 'new'");
+    await ensureLeadColumn('campaign_source', 'TEXT');
+    await ensureLeadColumn('campaign_medium', 'TEXT');
+    await ensureLeadColumn('campaign_name', 'TEXT');
+    await ensureLeadColumn('landing_path', 'TEXT');
+    await ensureLeadColumn('consent_at', 'TEXT');
+    await ensureLeadColumn('privacy_version', 'TEXT');
+    await ensureLeadColumn('updated_at', 'TEXT');
+
+    await getDB().batch([
+        { sql: 'CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_external_id ON leads (external_id) WHERE external_id IS NOT NULL', args: [] },
+        { sql: 'CREATE INDEX IF NOT EXISTS idx_leads_tenant_status_created ON leads (tenant_id, status, created_at DESC)', args: [] },
+        {
+            sql: `CREATE TABLE IF NOT EXISTS lead_events (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              tenant_id TEXT NOT NULL,
+              lead_id INTEGER NOT NULL,
+              event_type TEXT NOT NULL,
+              event_data TEXT DEFAULT '{}',
+              created_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+              FOREIGN KEY (lead_id) REFERENCES leads(id)
+            )`,
+            args: []
+        },
+        { sql: 'CREATE INDEX IF NOT EXISTS idx_lead_events_tenant_lead ON lead_events (tenant_id, lead_id, created_at DESC)', args: [] },
+    ], 'write');
+}
+
+async function ensureLeadColumn(name, definition) {
+    const columns = await query('PRAGMA table_info(leads)');
+    if (!columns.some(column => column.name === name)) {
+        await run(`ALTER TABLE leads ADD COLUMN ${name} ${definition}`);
+    }
 }
 
 async function seedDefaults() {
@@ -150,15 +190,15 @@ async function seedDefaults() {
     const defaultSettings = {
         'widget.name': 'NexusChat',
         'widget.welcome_message': '👋 Hi there! How can I help you today?',
-        'widget.primary_color': '#4F46E5',
-        'widget.secondary_color': '#7C3AED',
+        'widget.primary_color': '#f3f3ef',
+        'widget.secondary_color': '#9da0a2',
         'widget.position': 'bottom-right',
-        'widget.theme': 'light',
+        'widget.theme': 'dark',
         'widget.logo_url': '',
-        'widget.border_radius': '16',
-        'widget.language': 'en',
-        'widget.placeholder': 'Type your message...',
-        'widget.quick_replies': JSON.stringify(['Pricing', 'How it works', 'Contact support', 'FAQs']),
+        'widget.border_radius': '18',
+        'widget.language': 'es',
+        'widget.placeholder': 'Escribe tu consulta…',
+        'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona']),
         'ai.provider': 'ollama',
         'ai.model': 'llama3.2',
         'ai.temperature': '0.7',
@@ -213,4 +253,37 @@ When responding:
     ];
 
     await getDB().batch(statements, 'write');
+}
+
+async function seedNuvikWidgetDesign() {
+    const tenant = await queryOne('SELECT id FROM tenants WHERE id = ?', ['nuvik']);
+    if (!tenant) return;
+
+    const version = await queryOne(
+        "SELECT value FROM settings WHERE tenant_id = ? AND key = 'widget.design_version'",
+        ['nuvik']
+    );
+    if (version?.value === '2') return;
+
+    const settings = {
+        'widget.design_version': '2',
+        'widget.name': 'Nuvi · Asistente NUVIK',
+        'widget.welcome_message': 'Hola, soy Nuvi. Puedo orientarte sobre servicios, productos y próximos pasos de NUVIK.',
+        'widget.primary_color': '#f3f3ef',
+        'widget.secondary_color': '#9da0a2',
+        'widget.position': 'bottom-right',
+        'widget.theme': 'dark',
+        'widget.border_radius': '18',
+        'widget.language': 'es',
+        'widget.placeholder': 'Escribe tu consulta…',
+        'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Conocer NexusChat']),
+        'proactive.delay': '0',
+        'proactive.message': '',
+    };
+
+    await getDB().batch(Object.entries(settings).map(([key, value]) => ({
+        sql: `INSERT INTO settings (tenant_id, key, value) VALUES (?, ?, ?)
+              ON CONFLICT(tenant_id, key) DO UPDATE SET value = excluded.value`,
+        args: ['nuvik', key, value]
+    })), 'write');
 }
