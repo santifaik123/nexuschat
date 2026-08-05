@@ -50,7 +50,7 @@ export const getConversations = (params = {}) => {
     const q = new URLSearchParams(clean).toString();
     return fetchAPI(`/admin/conversations?${q}`);
 };
-export const getConversationMessages = (id) => fetchAPI(`/admin/conversations/${id}/messages`);
+export const getConversationMessages = (id, tenantId = 'default') => fetchAPI(`/admin/conversations/${id}/messages?tenantId=${tenantId}`);
 
 // Knowledge Base
 export const getFAQs = (tenantId = 'default') => fetchAPI(`/knowledge/faqs?tenantId=${tenantId}`);
@@ -71,7 +71,9 @@ export const getLeads = (params = {}) => {
     const q = new URLSearchParams({ tenantId: 'default', ...params }).toString();
     return fetchAPI(`/admin/leads?${q}`);
 };
-export const deleteLead = (id) => fetchAPI(`/admin/leads/${id}`, { method: 'DELETE' });
+export const deleteLead = (id, tenantId = 'default') => fetchAPI(`/admin/leads/${id}?tenantId=${tenantId}`, { method: 'DELETE' });
+export const updateLeadStatus = (id, status, tenantId = 'default') =>
+    fetchAPI(`/admin/leads/${id}/status`, { method: 'PATCH', body: { tenantId, status } });
 
 // AI Providers
 export const getProviders = () => fetchAPI('/admin/ai/providers');
