@@ -18,7 +18,7 @@ export default function Conversations({ tenantId = 'default' }) {
     const viewConversation = async (conv) => {
         setSelected(conv);
         try {
-            const data = await getConversationMessages(conv.id);
+            const data = await getConversationMessages(conv.id, tenantId);
             setMessages(data.messages || []);
         } catch (e) { console.error(e); }
     };
