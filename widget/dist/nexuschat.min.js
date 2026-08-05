@@ -16,15 +16,15 @@
             return window.location.origin;
         })(),
         position: 'bottom-right',
-        primaryColor: '#4F46E5',
-        secondaryColor: '#7C3AED',
+        primaryColor: '#f3f3ef',
+        secondaryColor: '#9da0a2',
         name: 'NexusChat',
-        welcomeMessage: '👋 Hi there! How can I help you today?',
-        placeholder: 'Type your message...',
-        theme: 'light',
-        borderRadius: 16,
-        language: 'en',
-        quickReplies: ['Pricing', 'How it works', 'Contact support', 'FAQs'],
+        welcomeMessage: 'Hola, soy tu asistente. ¿En qué puedo ayudarte?',
+        placeholder: 'Escribe tu consulta…',
+        theme: 'dark',
+        borderRadius: 18,
+        language: 'es',
+        quickReplies: ['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona'],
         logoUrl: '',
         showBranding: true,
         zIndex: 999999,
@@ -160,7 +160,7 @@
               ${logoHtml}
               <div class="nc-header-info">
                 <span class="nc-header-name">${this.config.name}</span>
-                <span class="nc-header-status"><span class="nc-status-dot"></span> Online</span>
+                <span class="nc-header-status">NexusChat conectado</span>
               </div>
             </div>
             <div class="nc-header-actions">
@@ -745,6 +745,92 @@
             position: fixed !important;
           }
           .nc-window.nc-visible ~ .nc-fab { display: none; }
+        }
+
+        /* NUVIK editorial widget system: sober, compact and non-intrusive. */
+        .nc-wrapper { right: 22px; bottom: 22px; }
+        .nc-fab {
+          width: 54px; height: 54px;
+          border: 1px solid rgba(255,255,255,.28);
+          background: rgba(24,26,27,.94);
+          box-shadow: 0 12px 34px rgba(0,0,0,.22);
+          backdrop-filter: blur(18px);
+        }
+        .nc-fab:hover { transform: translateY(-2px); background: #111315; box-shadow: 0 16px 38px rgba(0,0,0,.28); }
+        .nc-fab-icon { width: 22px; height: 22px; }
+        .nc-fab::after, .nc-fab-badge { display: none !important; }
+        .nc-window {
+          width: min(390px, calc(100vw - 32px));
+          height: min(570px, calc(100vh - 118px));
+          bottom: 68px;
+          border: 1px solid rgba(255,255,255,.14);
+          border-radius: var(--nc-radius);
+          background: #181a1b;
+          box-shadow: 0 30px 80px rgba(0,0,0,.42);
+        }
+        .nc-header {
+          min-height: 74px; padding: 14px 16px;
+          border-bottom: 1px solid rgba(255,255,255,.1);
+          background: #181a1b;
+        }
+        .nc-header-avatar {
+          width: 34px; height: 34px; border-radius: 8px;
+          color: #181a1b; background: var(--nc-primary); box-shadow: none;
+        }
+        .nc-header-logo { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; }
+        .nc-header-name { color: #f7f7f5; font-size: 14px; letter-spacing: -.01em; }
+        .nc-header-status {
+          margin-top: 3px; color: var(--nc-secondary);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+        }
+        .nc-status-dot { display: none; }
+        .nc-header-actions button { color: #d9dbdb; background: transparent; }
+        .nc-header-actions button:hover { background: rgba(255,255,255,.08); }
+        .nc-messages { padding: 18px 16px; gap: 12px; background: #181a1b; }
+        .nc-msg-avatar { display: none; }
+        .nc-msg-content { max-width: 84%; }
+        .nc-msg-bubble {
+          padding: 11px 13px; border-radius: 14px 14px 14px 3px;
+          color: #dcdfdf; background: #252829; box-shadow: none;
+          font-size: 14px; line-height: 1.5;
+        }
+        .nc-msg-user { justify-content: flex-end; }
+        .nc-msg-user .nc-msg-content { margin-left: auto; }
+        .nc-msg-user .nc-msg-bubble {
+          border-radius: 14px 14px 3px 14px;
+          color: #17191a; background: var(--nc-primary);
+        }
+        .nc-msg-time { color: #858889; font-size: 9px; }
+        .nc-quick-replies, .nc-inline-suggestions { gap: 8px; background: #181a1b; }
+        .nc-quick-reply, .nc-inline-suggest {
+          padding: 8px 10px; border: 1px solid #55585a; border-radius: 999px;
+          color: #d9dbdb; background: transparent; font-size: 12px;
+        }
+        .nc-quick-reply:hover, .nc-inline-suggest:hover { color: #181a1b; background: var(--nc-primary); border-color: var(--nc-primary); }
+        .nc-input-area { padding: 12px; border-top: 1px solid rgba(255,255,255,.1); background: #1d2021; }
+        .nc-input-wrapper { gap: 8px; padding: 0; border: 0; background: transparent; }
+        .nc-input-field {
+          height: 42px; padding: 0 13px; border: 1px solid #4b4e50; border-radius: 10px;
+          color: #fff; background: #181a1b;
+        }
+        .nc-input-field:focus { border-color: var(--nc-secondary); }
+        .nc-send-btn {
+          width: 42px; height: 42px; border: 1px solid var(--nc-primary); border-radius: 10px;
+          color: #181a1b; background: var(--nc-primary); box-shadow: none;
+        }
+        .nc-send-btn:not(:disabled):hover { transform: none; box-shadow: none; }
+        .nc-branding { padding: 6px; border-top: 0; color: #858889; background: #1d2021; font-size: 10px; }
+        .nc-branding strong { color: #b8babb; }
+        .nc-lead-form { border-top-color: rgba(255,255,255,.1); background: #1d2021; }
+        .nc-lead-content input { color: #fff; background: #181a1b; border-color: #4b4e50; }
+        .nc-lead-submit { color: #181a1b; background: var(--nc-primary); }
+        @media (max-width: 560px) {
+          .nc-wrapper { right: 14px; bottom: 14px; }
+          .nc-window {
+            inset: 12px !important; width: auto !important; height: auto !important;
+            max-height: none !important; border-radius: 14px !important;
+          }
         }
       `;
         }

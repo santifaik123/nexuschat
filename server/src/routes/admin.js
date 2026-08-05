@@ -5,15 +5,15 @@ import { query, queryOne, run, getDB } from '../db/database.js';
 const DEFAULT_TENANT_SETTINGS = {
     'widget.name': 'NexusChat',
     'widget.welcome_message': '👋 Hi there! How can I help you today?',
-    'widget.primary_color': '#4F46E5',
-    'widget.secondary_color': '#7C3AED',
+    'widget.primary_color': '#f3f3ef',
+    'widget.secondary_color': '#9da0a2',
     'widget.position': 'bottom-right',
-    'widget.theme': 'light',
+    'widget.theme': 'dark',
     'widget.logo_url': '',
-    'widget.border_radius': '16',
-    'widget.language': 'en',
-    'widget.placeholder': 'Type your message...',
-    'widget.quick_replies': JSON.stringify(['Pricing', 'How it works', 'Contact support', 'FAQs']),
+    'widget.border_radius': '18',
+    'widget.language': 'es',
+    'widget.placeholder': 'Escribe tu consulta…',
+    'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona']),
     'ai.provider': 'groq',
     'ai.model': 'default',
     'ai.temperature': '0.7',
@@ -145,6 +145,12 @@ router.delete('/conversations/cleanup', async (req, res) => {
 router.get('/conversations/:id/messages', async (req, res) => {
     try {
         const { id } = req.params;
+        const { tenantId = 'default' } = req.query;
+        const conversation = await queryOne(
+            'SELECT id FROM conversations WHERE id = ? AND tenant_id = ?',
+            [id, tenantId]
+        );
+        if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
         const messages = await query(
             'SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
             [id]
@@ -161,14 +167,23 @@ router.get('/conversations/:id/messages', async (req, res) => {
 // List leads
 router.get('/leads', async (req, res) => {
     try {
-        const { tenantId = 'default', limit = 50, offset = 0 } = req.query;
+        const { tenantId = 'default', status, limit = 50, offset = 0 } = req.query;
+        const safeLimit = Math.max(1, Math.min(100, parseInt(limit) || 50));
+        const safeOffset = Math.max(0, parseInt(offset) || 0);
+        const allowedStatuses = new Set(['new', 'contacted', 'qualified', 'won', 'lost', 'archived']);
+        const statusFilter = allowedStatuses.has(status) ? status : null;
+        const where = statusFilter ? 'tenant_id = ? AND status = ?' : 'tenant_id = ?';
+        const args = statusFilter ? [tenantId, statusFilter] : [tenantId];
         const leads = await query(
-            'SELECT * FROM leads WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-            [tenantId, parseInt(limit), parseInt(offset)]
+            `SELECT id, tenant_id, external_id, source, conversation_id, name, email, company,
+                    inquiry_type, message, status, campaign_source, campaign_medium,
+                    campaign_name, landing_path, consent_at, privacy_version, created_at, updated_at
+             FROM leads WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+            [...args, safeLimit, safeOffset]
         );
         const totalRow = await queryOne(
-            'SELECT COUNT(*) as count FROM leads WHERE tenant_id = ?',
-            [tenantId]
+            `SELECT COUNT(*) as count FROM leads WHERE ${where}`,
+            args
         );
         res.json({ leads, total: totalRow.count });
     } catch (err) {
@@ -181,13 +196,36 @@ router.get('/leads', async (req, res) => {
 router.delete('/leads/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const existing = await queryOne('SELECT id FROM leads WHERE id = ?', [id]);
+        const { tenantId = 'default' } = req.query;
+        const existing = await queryOne('SELECT id FROM leads WHERE id = ? AND tenant_id = ?', [id, tenantId]);
         if (!existing) return res.status(404).json({ error: 'Lead not found' });
-        await run('DELETE FROM leads WHERE id = ?', [id]);
+        await run('DELETE FROM lead_events WHERE lead_id = ? AND tenant_id = ?', [id, tenantId]);
+        await run('DELETE FROM leads WHERE id = ? AND tenant_id = ?', [id, tenantId]);
         res.json({ success: true });
     } catch (err) {
         console.error('Lead delete error:', err);
         res.status(500).json({ error: 'Failed to delete lead' });
+    }
+});
+
+router.patch('/leads/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tenantId = 'default', status } = req.body || {};
+        const allowed = new Set(['new', 'contacted', 'qualified', 'won', 'lost', 'archived']);
+        if (!allowed.has(status)) return res.status(400).json({ error: 'Invalid status' });
+        const existing = await queryOne('SELECT id, status FROM leads WHERE id = ? AND tenant_id = ?', [id, tenantId]);
+        if (!existing) return res.status(404).json({ error: 'Lead not found' });
+        await run('UPDATE leads SET status = ?, updated_at = datetime(\'now\') WHERE id = ? AND tenant_id = ?', [status, id, tenantId]);
+        await run(
+            `INSERT INTO lead_events (tenant_id, lead_id, event_type, event_data)
+             VALUES (?, ?, 'status_changed', ?)`,
+            [tenantId, id, JSON.stringify({ from: existing.status || 'new', to: status })]
+        );
+        res.json({ success: true, status });
+    } catch {
+        console.error('Lead status update failed');
+        res.status(500).json({ error: 'Failed to update lead status' });
     }
 });
 
