@@ -1,11 +1,12 @@
 import { AIProvider } from '../adapter.js';
+import { Groq } from 'groq-sdk';
 
 export class GroqProvider extends AIProvider {
     constructor() {
         super('groq');
         this.apiKey = process.env.GROQ_API_KEY;
-        this.model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-        this.baseUrl = 'https://api.groq.com/openai/v1';
+        this.client = this.apiKey ? new Groq({ apiKey: this.apiKey }) : null;
+        this.model = process.env.GROQ_MODEL || 'qwen/qwen3.6-27b';
     }
 
     isAvailable() {
@@ -14,38 +15,52 @@ export class GroqProvider extends AIProvider {
 
     async generateResponse(messages, options = {}) {
         const model = options.model && options.model !== 'default' ? options.model : this.model;
+        const temperature = Number.isFinite(options.temperature) ? options.temperature : 0.6;
+        const maxCompletionTokens = Number.isInteger(options.maxTokens) ? options.maxTokens : 2048;
+        const topP = Number.isFinite(options.topP) ? options.topP : 0.95;
+        const isQwenReasoning = model === 'qwen/qwen3.6-27b';
         const startTime = Date.now();
 
-        const response = await fetch(`${this.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model,
-                messages: messages.map(m => ({ role: m.role, content: m.content })),
-                temperature: options.temperature || 0.7,
-                max_tokens: options.maxTokens || 500,
-            }),
-            signal: AbortSignal.timeout(30000),
-        });
+        const payload = {
+            model,
+            messages: messages.map(m => ({ role: m.role, content: m.content })),
+            temperature: Math.max(0, Math.min(2, temperature)),
+            max_completion_tokens: Math.max(50, Math.min(16384, maxCompletionTokens)),
+            top_p: Math.max(0, Math.min(1, topP)),
+            stream: true,
+            stop: null,
+        };
 
-        if (!response.ok) {
-            const err = await response.text();
-            throw new Error(`Groq error (${response.status}): ${err}`);
+        // Keep Qwen reasoning enabled for answer quality, but never expose its
+        // private reasoning trace inside the public support widget.
+        if (isQwenReasoning) {
+            payload.reasoning_effort = options.reasoningEffort === 'none' ? 'none' : 'default';
+            payload.reasoning_format = 'hidden';
         }
 
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
+        if (!this.client) throw new Error('Groq API key is not configured');
+
+        const completion = await this.client.chat.completions.create(payload, {
+            timeout: 45000,
+        });
+
+        let content = '';
+        let responseModel = model;
+        let tokensUsed = 0;
+
+        for await (const chunk of completion) {
+            content += chunk.choices?.[0]?.delta?.content || '';
+            responseModel = chunk.model || responseModel;
+            tokensUsed = chunk.usage?.total_tokens || chunk.x_groq?.usage?.total_tokens || tokensUsed;
+        }
 
         if (!content) throw new Error('No content in Groq response');
 
         return {
             content: content.trim(),
-            model: data.model || model,
+            model: responseModel,
             confidence: 0.9,
-            tokensUsed: data.usage?.total_tokens || 0,
+            tokensUsed,
             responseTime: Date.now() - startTime,
         };
     }

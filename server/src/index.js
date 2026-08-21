@@ -63,7 +63,7 @@ if (primaryAI) {
     if (primaryAI.name === 'ollama') {
         console.log(`   Model: ${process.env.OLLAMA_MODEL || 'llama3.2'} (local, free)`);
     } else if (primaryAI.name === 'groq') {
-        console.log(`   Model: ${process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'} (free, cloud)`);
+        console.log(`   Model: ${process.env.GROQ_MODEL || 'qwen/qwen3.6-27b'} (cloud)`);
     }
 } else {
     providerManager.setPrimary('fallback');
