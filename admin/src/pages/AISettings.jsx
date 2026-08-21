@@ -21,9 +21,11 @@ export default function AISettings({ tenantId = 'default' }) {
         try {
             await updateSettings({
                 'ai.provider': get('ai.provider', 'groq'),
-                'ai.model': get('ai.model', 'default'),
-                'ai.temperature': get('ai.temperature', '0.7'),
-                'ai.max_tokens': get('ai.max_tokens', '500'),
+                'ai.model': get('ai.model', 'qwen/qwen3.6-27b'),
+                'ai.temperature': get('ai.temperature', '0.6'),
+                'ai.max_tokens': get('ai.max_tokens', '2048'),
+                'ai.top_p': get('ai.top_p', '0.95'),
+                'ai.reasoning_effort': get('ai.reasoning_effort', 'default'),
                 'ai.system_prompt': get('ai.system_prompt', ''),
                 'ai.tone': get('ai.tone', 'professional'),
             }, tenantId);
@@ -99,15 +101,26 @@ export default function AISettings({ tenantId = 'default' }) {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Temperature ({get('ai.temperature', '0.7')})</label>
-                            <input type="range" min="0" max="1" step="0.1" value={get('ai.temperature', '0.7')} onChange={e => set('ai.temperature', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
+                            <label className="form-label">Temperature ({get('ai.temperature', '0.6')})</label>
+                            <input type="range" min="0" max="1" step="0.1" value={get('ai.temperature', '0.6')} onChange={e => set('ai.temperature', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
                                 <span>Precise</span><span>Creative</span>
                             </div>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Max Response Length (tokens)</label>
-                            <input className="form-input" type="number" value={get('ai.max_tokens', '500')} onChange={e => set('ai.max_tokens', e.target.value)} min={50} max={2000} />
+                            <input className="form-input" type="number" value={get('ai.max_tokens', '2048')} onChange={e => set('ai.max_tokens', e.target.value)} min={50} max={16384} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Top P ({get('ai.top_p', '0.95')})</label>
+                            <input type="range" min="0" max="1" step="0.05" value={get('ai.top_p', '0.95')} onChange={e => set('ai.top_p', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Qwen Reasoning</label>
+                            <select className="form-select" value={get('ai.reasoning_effort', 'default')} onChange={e => set('ai.reasoning_effort', e.target.value)}>
+                                <option value="default">Enabled</option>
+                                <option value="none">Disabled (faster)</option>
+                            </select>
                         </div>
                     </div>
                 </div>

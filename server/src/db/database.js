@@ -34,6 +34,7 @@ export async function initDB() {
     await initSchema();
     await seedDefaults();
     await seedNuvikWidgetDesign();
+    await seedNuvikAIConfig();
 }
 
 async function initSchema() {
@@ -199,10 +200,12 @@ async function seedDefaults() {
         'widget.language': 'es',
         'widget.placeholder': 'Escribe tu consulta…',
         'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona']),
-        'ai.provider': 'ollama',
-        'ai.model': 'llama3.2',
-        'ai.temperature': '0.7',
-        'ai.max_tokens': '500',
+        'ai.provider': 'groq',
+        'ai.model': 'qwen/qwen3.6-27b',
+        'ai.temperature': '0.6',
+        'ai.max_tokens': '2048',
+        'ai.top_p': '0.95',
+        'ai.reasoning_effort': 'default',
         'ai.system_prompt': `You are NexusChat, a professional, friendly, and helpful AI customer support assistant. Your role is to:
 
 1. Answer customer questions accurately and concisely
@@ -279,6 +282,33 @@ async function seedNuvikWidgetDesign() {
         'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Conocer NexusChat']),
         'proactive.delay': '0',
         'proactive.message': '',
+    };
+
+    await getDB().batch(Object.entries(settings).map(([key, value]) => ({
+        sql: `INSERT INTO settings (tenant_id, key, value) VALUES (?, ?, ?)
+              ON CONFLICT(tenant_id, key) DO UPDATE SET value = excluded.value`,
+        args: ['nuvik', key, value]
+    })), 'write');
+}
+
+async function seedNuvikAIConfig() {
+    const tenant = await queryOne('SELECT id FROM tenants WHERE id = ?', ['nuvik']);
+    if (!tenant) return;
+
+    const version = await queryOne(
+        "SELECT value FROM settings WHERE tenant_id = ? AND key = 'ai.groq_config_version'",
+        ['nuvik']
+    );
+    if (version?.value === '1') return;
+
+    const settings = {
+        'ai.groq_config_version': '1',
+        'ai.provider': 'groq',
+        'ai.model': 'qwen/qwen3.6-27b',
+        'ai.temperature': '0.6',
+        'ai.max_tokens': '2048',
+        'ai.top_p': '0.95',
+        'ai.reasoning_effort': 'default',
     };
 
     await getDB().batch(Object.entries(settings).map(([key, value]) => ({
