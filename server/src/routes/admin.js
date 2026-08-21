@@ -15,11 +15,11 @@ const DEFAULT_TENANT_SETTINGS = {
     'widget.placeholder': 'Escribe tu consulta…',
     'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona']),
     'ai.provider': 'groq',
-    'ai.model': 'qwen/qwen3.6-27b',
-    'ai.temperature': '0.6',
+    'ai.model': 'openai/gpt-oss-20b',
+    'ai.temperature': '1',
     'ai.max_tokens': '2048',
-    'ai.top_p': '0.95',
-    'ai.reasoning_effort': 'default',
+    'ai.top_p': '1',
+    'ai.reasoning_effort': 'medium',
     'ai.system_prompt': 'You are a helpful AI customer support assistant. Answer questions accurately and concisely.',
     'ai.tone': 'professional',
     'business.name': 'My Business',
@@ -296,10 +296,10 @@ router.get('/ai/providers', (req, res) => {
             {
                 id: 'groq',
                 name: 'Groq (Cloud, Free)',
-                description: 'Ultra-fast cloud AI. Qwen 3.6 supports multilingual reasoning for customer support.',
+                description: 'Ultra-fast cloud AI. GPT-OSS 20B is production-ready, multilingual and optimized for low latency.',
                 free: true,
                 requiresKey: true,
-                models: ['qwen/qwen3.6-27b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
+                models: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b']
             },
             {
                 id: 'ollama',

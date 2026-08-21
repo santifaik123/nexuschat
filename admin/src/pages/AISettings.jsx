@@ -21,11 +21,11 @@ export default function AISettings({ tenantId = 'default' }) {
         try {
             await updateSettings({
                 'ai.provider': get('ai.provider', 'groq'),
-                'ai.model': get('ai.model', 'qwen/qwen3.6-27b'),
-                'ai.temperature': get('ai.temperature', '0.6'),
+                'ai.model': get('ai.model', 'openai/gpt-oss-20b'),
+                'ai.temperature': get('ai.temperature', '1'),
                 'ai.max_tokens': get('ai.max_tokens', '2048'),
-                'ai.top_p': get('ai.top_p', '0.95'),
-                'ai.reasoning_effort': get('ai.reasoning_effort', 'default'),
+                'ai.top_p': get('ai.top_p', '1'),
+                'ai.reasoning_effort': get('ai.reasoning_effort', 'medium'),
                 'ai.system_prompt': get('ai.system_prompt', ''),
                 'ai.tone': get('ai.tone', 'professional'),
             }, tenantId);
@@ -36,6 +36,16 @@ export default function AISettings({ tenantId = 'default' }) {
     };
 
     const currentProvider = providers.find(p => p.id === get('ai.provider', 'fallback'));
+    const currentModel = get('ai.model', 'openai/gpt-oss-20b');
+    const isGptOss = currentModel.startsWith('openai/gpt-oss-');
+
+    const changeModel = (model) => {
+        setSettings(prev => ({
+            ...prev,
+            'ai.model': model,
+            'ai.reasoning_effort': model.startsWith('openai/gpt-oss-') ? 'medium' : 'default',
+        }));
+    };
 
     return (
         <div className="fadeIn">
@@ -79,7 +89,7 @@ export default function AISettings({ tenantId = 'default' }) {
                         {currentProvider?.models && (
                             <div className="form-group" style={{ marginTop: 20 }}>
                                 <label className="form-label">Model</label>
-                                <select className="form-select" value={get('ai.model', 'default')} onChange={e => set('ai.model', e.target.value)}>
+                                <select className="form-select" value={currentModel} onChange={e => changeModel(e.target.value)}>
                                     <option value="default">Default</option>
                                     {currentProvider.models.map(m => <option key={m} value={m}>{m}</option>)}
                                 </select>
@@ -101,8 +111,8 @@ export default function AISettings({ tenantId = 'default' }) {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Temperature ({get('ai.temperature', '0.6')})</label>
-                            <input type="range" min="0" max="1" step="0.1" value={get('ai.temperature', '0.6')} onChange={e => set('ai.temperature', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
+                            <label className="form-label">Temperature ({get('ai.temperature', '1')})</label>
+                            <input type="range" min="0" max="1" step="0.1" value={get('ai.temperature', '1')} onChange={e => set('ai.temperature', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
                                 <span>Precise</span><span>Creative</span>
                             </div>
@@ -112,14 +122,24 @@ export default function AISettings({ tenantId = 'default' }) {
                             <input className="form-input" type="number" value={get('ai.max_tokens', '2048')} onChange={e => set('ai.max_tokens', e.target.value)} min={50} max={16384} />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Top P ({get('ai.top_p', '0.95')})</label>
-                            <input type="range" min="0" max="1" step="0.05" value={get('ai.top_p', '0.95')} onChange={e => set('ai.top_p', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
+                            <label className="form-label">Top P ({get('ai.top_p', '1')})</label>
+                            <input type="range" min="0" max="1" step="0.05" value={get('ai.top_p', '1')} onChange={e => set('ai.top_p', e.target.value)} style={{ width: '100%', accentColor: 'var(--primary)' }} />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Qwen Reasoning</label>
-                            <select className="form-select" value={get('ai.reasoning_effort', 'default')} onChange={e => set('ai.reasoning_effort', e.target.value)}>
-                                <option value="default">Enabled</option>
-                                <option value="none">Disabled (faster)</option>
+                            <label className="form-label">Reasoning Effort</label>
+                            <select className="form-select" value={get('ai.reasoning_effort', isGptOss ? 'medium' : 'default')} onChange={e => set('ai.reasoning_effort', e.target.value)}>
+                                {isGptOss ? (
+                                    <>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="default">Enabled</option>
+                                        <option value="none">Disabled (faster)</option>
+                                    </>
+                                )}
                             </select>
                         </div>
                     </div>

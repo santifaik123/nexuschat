@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { GroqProvider } from '../src/ai/providers/groq.js';
 
-test('streams Qwen 3.6 with the NexusChat production parameters', async () => {
+test('streams GPT-OSS 20B with the NexusChat production parameters', async () => {
     process.env.GROQ_API_KEY = 'test-key';
     const provider = new GroqProvider();
     let request;
@@ -25,31 +25,31 @@ test('streams Qwen 3.6 with the NexusChat production parameters', async () => {
     const result = await provider.generateResponse(
         [{ role: 'user', content: 'Hola' }],
         {
-            model: 'qwen/qwen3.6-27b',
-            temperature: 0.6,
+            model: 'openai/gpt-oss-20b',
+            temperature: 1,
             maxTokens: 2048,
-            topP: 0.95,
-            reasoningEffort: 'default',
+            topP: 1,
+            reasoningEffort: 'medium',
         },
     );
 
     assert.deepEqual(request, {
-        model: 'qwen/qwen3.6-27b',
+        model: 'openai/gpt-oss-20b',
         messages: [{ role: 'user', content: 'Hola' }],
-        temperature: 0.6,
+        temperature: 1,
         max_completion_tokens: 2048,
-        top_p: 0.95,
+        top_p: 1,
         stream: true,
         stop: null,
-        reasoning_effort: 'default',
+        reasoning_effort: 'medium',
         reasoning_format: 'hidden',
     });
     assert.equal(result.content, 'Hola desde Nuvi');
-    assert.equal(result.model, 'qwen/qwen3.6-27b');
+    assert.equal(result.model, 'openai/gpt-oss-20b');
     assert.equal(result.tokensUsed, 42);
 });
 
-test('does not send Qwen-only reasoning options to other Groq models', async () => {
+test('keeps Qwen reasoning options compatible when selected manually', async () => {
     process.env.GROQ_API_KEY = 'test-key';
     const provider = new GroqProvider();
     let request;
@@ -68,9 +68,10 @@ test('does not send Qwen-only reasoning options to other Groq models', async () 
     };
 
     await provider.generateResponse([{ role: 'user', content: 'Hola' }], {
-        model: 'llama-3.1-8b-instant',
+        model: 'qwen/qwen3.6-27b',
+        reasoningEffort: 'default',
     });
 
-    assert.equal(request.reasoning_effort, undefined);
-    assert.equal(request.reasoning_format, undefined);
+    assert.equal(request.reasoning_effort, 'default');
+    assert.equal(request.reasoning_format, 'hidden');
 });

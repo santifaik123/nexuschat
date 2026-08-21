@@ -54,10 +54,10 @@ export class AIEngine {
         const aiOptions = {
             provider: settings['ai.provider'],
             model: settings['ai.model'],
-            temperature: parseFloat(settings['ai.temperature'] || '0.6'),
+            temperature: parseFloat(settings['ai.temperature'] || '1'),
             maxTokens: parseInt(settings['ai.max_tokens'] || '2048'),
-            topP: parseFloat(settings['ai.top_p'] || '0.95'),
-            reasoningEffort: settings['ai.reasoning_effort'] || 'default',
+            topP: parseFloat(settings['ai.top_p'] || '1'),
+            reasoningEffort: settings['ai.reasoning_effort'] || 'medium',
         };
 
         let result;
