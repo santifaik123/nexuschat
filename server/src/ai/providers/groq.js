@@ -6,7 +6,7 @@ export class GroqProvider extends AIProvider {
         super('groq');
         this.apiKey = process.env.GROQ_API_KEY;
         this.client = this.apiKey ? new Groq({ apiKey: this.apiKey }) : null;
-        this.model = process.env.GROQ_MODEL || 'qwen/qwen3.6-27b';
+        this.model = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
     }
 
     isAvailable() {
@@ -15,10 +15,11 @@ export class GroqProvider extends AIProvider {
 
     async generateResponse(messages, options = {}) {
         const model = options.model && options.model !== 'default' ? options.model : this.model;
-        const temperature = Number.isFinite(options.temperature) ? options.temperature : 0.6;
+        const temperature = Number.isFinite(options.temperature) ? options.temperature : 1;
         const maxCompletionTokens = Number.isInteger(options.maxTokens) ? options.maxTokens : 2048;
-        const topP = Number.isFinite(options.topP) ? options.topP : 0.95;
+        const topP = Number.isFinite(options.topP) ? options.topP : 1;
         const isQwenReasoning = model === 'qwen/qwen3.6-27b';
+        const isGptOssReasoning = model === 'openai/gpt-oss-20b' || model === 'openai/gpt-oss-120b';
         const startTime = Date.now();
 
         const payload = {
@@ -31,9 +32,15 @@ export class GroqProvider extends AIProvider {
             stop: null,
         };
 
-        // Keep Qwen reasoning enabled for answer quality, but never expose its
-        // private reasoning trace inside the public support widget.
-        if (isQwenReasoning) {
+        // Keep reasoning enabled for answer quality, but never expose its
+        // private trace inside the public customer-support widget.
+        if (isGptOssReasoning) {
+            const allowedEfforts = new Set(['low', 'medium', 'high']);
+            payload.reasoning_effort = allowedEfforts.has(options.reasoningEffort)
+                ? options.reasoningEffort
+                : 'medium';
+            payload.reasoning_format = 'hidden';
+        } else if (isQwenReasoning) {
             payload.reasoning_effort = options.reasoningEffort === 'none' ? 'none' : 'default';
             payload.reasoning_format = 'hidden';
         }

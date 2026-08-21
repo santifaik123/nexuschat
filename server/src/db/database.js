@@ -201,11 +201,11 @@ async function seedDefaults() {
         'widget.placeholder': 'Escribe tu consulta…',
         'widget.quick_replies': JSON.stringify(['Ver servicios', 'Solicitar una cotización', 'Hablar con una persona']),
         'ai.provider': 'groq',
-        'ai.model': 'qwen/qwen3.6-27b',
-        'ai.temperature': '0.6',
+        'ai.model': 'openai/gpt-oss-20b',
+        'ai.temperature': '1',
         'ai.max_tokens': '2048',
-        'ai.top_p': '0.95',
-        'ai.reasoning_effort': 'default',
+        'ai.top_p': '1',
+        'ai.reasoning_effort': 'medium',
         'ai.system_prompt': `You are NexusChat, a professional, friendly, and helpful AI customer support assistant. Your role is to:
 
 1. Answer customer questions accurately and concisely
@@ -299,16 +299,16 @@ async function seedNuvikAIConfig() {
         "SELECT value FROM settings WHERE tenant_id = ? AND key = 'ai.groq_config_version'",
         ['nuvik']
     );
-    if (version?.value === '1') return;
+    if (version?.value === '2') return;
 
     const settings = {
-        'ai.groq_config_version': '1',
+        'ai.groq_config_version': '2',
         'ai.provider': 'groq',
-        'ai.model': 'qwen/qwen3.6-27b',
-        'ai.temperature': '0.6',
+        'ai.model': 'openai/gpt-oss-20b',
+        'ai.temperature': '1',
         'ai.max_tokens': '2048',
-        'ai.top_p': '0.95',
-        'ai.reasoning_effort': 'default',
+        'ai.top_p': '1',
+        'ai.reasoning_effort': 'medium',
     };
 
     await getDB().batch(Object.entries(settings).map(([key, value]) => ({
